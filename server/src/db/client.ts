@@ -22,3 +22,7 @@ export function getDb(): Db {
 
   return db;
 }
+
+export function getMongoClient(): MongoClient {
+  return client;
+}
