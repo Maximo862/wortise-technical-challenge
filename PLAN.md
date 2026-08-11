@@ -42,6 +42,9 @@
 - Protect private routes using TanStack Router.
 - Redirect unauthenticated users to `/login`.
 - Verify that visiting `/articles` without a valid session redirects correctly.
+- Organize reusable business code by functionality:
+- `src/features/auth/`
+- `src/features/articles/`
 
 ## Phase 6 — Articles Backend
 
