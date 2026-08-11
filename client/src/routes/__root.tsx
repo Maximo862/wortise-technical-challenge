@@ -1,8 +1,14 @@
 import { Button } from "@heroui/react";
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  Link,
+  Outlet,
+  useNavigate,
+} from "@tanstack/react-router";
 import { authClient } from "../lib/auth-client";
 
 function RootLayout() {
+  const navigate = useNavigate();
   const { data: session, isPending } = authClient.useSession();
 
   return (
@@ -14,8 +20,16 @@ function RootLayout() {
         <div className="flex items-center gap-4">
           {isPending ? null : session ? (
             <>
+              <Link to="/articles">My articles</Link>
               <span>Hi, {session.user.name}</span>
-              <Button onPress={() => authClient.signOut()}>Log out</Button>
+              <Button
+                onPress={async () => {
+                  await authClient.signOut();
+                  navigate({ to: "/" });
+                }}
+              >
+                Log out
+              </Button>
             </>
           ) : (
             <>
