@@ -1,10 +1,12 @@
 import type {
   Article,
   PaginatedArticles,
+  PublicAuthor,
 } from "shared";
 import {
   ObjectId,
   type Collection,
+  type Filter,
   type UpdateFilter,
 } from "mongodb";
 import { getDb } from "../db/client";
@@ -81,6 +83,71 @@ export async function findArticlesByAuthor(
 ): Promise<PaginatedArticles> {
   const collection = getArticlesCollection();
   const filter = { authorId };
+  const skip = (page - 1) * limit;
+
+  const [documents, total] = await Promise.all([
+    collection
+      .find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    collection.countDocuments(filter),
+  ]);
+
+  return {
+    articles: documents.map(toArticle),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+export async function findPublicAuthors(): Promise<PublicAuthor[]> {
+  type AuthorGroup = {
+    _id: { authorId: string; authorName: string };
+    articleCount: number;
+  };
+
+  const groups = await getArticlesCollection()
+    .aggregate<AuthorGroup>([
+      {
+        $group: {
+          _id: { authorId: "$authorId", authorName: "$authorName" },
+          articleCount: { $sum: 1 },
+        },
+      },
+      { $sort: { articleCount: -1, "_id.authorName": 1 } },
+    ])
+    .toArray();
+
+  return groups.map((group) => ({
+    id: group._id.authorId,
+    name: group._id.authorName,
+    articleCount: group.articleCount,
+  }));
+}
+
+export async function searchPublicArticles(
+  query: string,
+  page: number,
+  limit: number,
+): Promise<PaginatedArticles> {
+  const collection = getArticlesCollection();
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const searchPattern = new RegExp(escapedQuery, "i"); //lowercase - uppercase 
+  const filter: Filter<ArticleDocument> = query
+    ? {
+        $or: [
+          { title: searchPattern },
+          { content: searchPattern },
+          { authorName: searchPattern },
+        ],
+      }
+    : {};
   const skip = (page - 1) * limit;
 
   const [documents, total] = await Promise.all([

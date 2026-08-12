@@ -31,6 +31,9 @@ function EditArticlePage() {
         article,
       );
       queryClient.invalidateQueries({ queryKey: articleQueryKeys.mine() });
+      queryClient.invalidateQueries({
+        queryKey: articleQueryKeys.publicRoot(),
+      });
       navigate({
         to: "/articles/$articleId",
         params: { articleId: article.id },

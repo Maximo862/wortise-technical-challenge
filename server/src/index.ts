@@ -7,6 +7,7 @@ import { connectToDatabase, getMongoClient } from "./db/client";
 import { sessionMiddleware, type SessionVariables } from "./middlewares/session.middleware";
 import { articlesRoute } from "./routes/articles.route";
 import { healthRoute } from "./routes/health.route";
+import { publicRoute } from "./routes/public.route";
 
 let db;
 
@@ -29,6 +30,7 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.route("/health", healthRoute);
 app.route("/api/articles", articlesRoute);
+app.route("/api/public", publicRoute);
 
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   console.log(`Server running on http://localhost:${info.port}`);

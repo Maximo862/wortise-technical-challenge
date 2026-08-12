@@ -3,6 +3,8 @@ import type {
   ArticlesPaginationInput,
   CreateArticleInput,
   PaginatedArticles,
+  PublicArticleSearchInput,
+  PublicAuthor,
   UpdateArticleInput,
 } from "shared";
 import { ObjectId } from "mongodb";
@@ -12,6 +14,8 @@ import {
   deleteArticleByOwner,
   findArticleById,
   findArticlesByAuthor,
+  findPublicAuthors,
+  searchPublicArticles,
   updateArticleByOwner,
   type ArticleChanges,
 } from "./articles.repository";
@@ -69,6 +73,20 @@ export async function listOwnArticles(
   pagination: ArticlesPaginationInput,
 ): Promise<PaginatedArticles> {
   return findArticlesByAuthor(authorId, pagination.page, pagination.limit);
+}
+
+export function listPublicAuthors(): Promise<PublicAuthor[]> {
+  return findPublicAuthors();
+}
+
+export function searchArticles(
+  input: PublicArticleSearchInput,
+): Promise<PaginatedArticles> {
+  return searchPublicArticles(
+    input.q,
+    input.page,
+    input.limit,
+  );
 }
 
 export async function getArticle(id: string): Promise<Article> {

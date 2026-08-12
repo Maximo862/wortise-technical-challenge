@@ -28,6 +28,9 @@ function ArticleDetailPage() {
         queryKey: articleQueryKeys.detail(articleId),
       });
       queryClient.invalidateQueries({ queryKey: articleQueryKeys.mine() });
+      queryClient.invalidateQueries({
+        queryKey: articleQueryKeys.publicRoot(),
+      });
       navigate({ to: "/articles" });
     },
   });

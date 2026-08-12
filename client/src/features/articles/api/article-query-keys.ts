@@ -5,4 +5,12 @@ export const articleQueryKeys = {
   details: () => [...articleQueryKeys.all, "detail"] as const,
   detail: (articleId: string) =>
     [...articleQueryKeys.details(), articleId] as const,
+  publicRoot: () => [...articleQueryKeys.all, "public"] as const,
+  publicAuthors: () => [...articleQueryKeys.publicRoot(), "authors"] as const,
+  publicSearch: (query: string, page: number) =>
+    [
+      ...articleQueryKeys.publicRoot(),
+      "search",
+      { query, page },
+    ] as const,
 };

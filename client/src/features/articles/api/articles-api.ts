@@ -2,6 +2,7 @@ import type {
   Article,
   CreateArticleInput,
   PaginatedArticles,
+  PublicAuthor,
   UpdateArticleInput,
 } from "shared";
 
@@ -42,6 +43,25 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getOwnArticles(page: number) {
   return request<PaginatedArticles>(`/api/articles/mine?page=${page}&limit=10`);
+}
+
+export async function getPublicAuthors() {
+  const response = await request<{ authors: PublicAuthor[] }>(
+    "/api/public/authors",
+  );
+  return response.authors;
+}
+
+export function searchPublicArticles(query: string, page: number) {
+  const searchParams = new URLSearchParams({
+    q: query,
+    page: String(page),
+    limit: "10",
+  });
+
+  return request<PaginatedArticles>(
+    `/api/public/search?${searchParams.toString()}`,
+  );
 }
 
 export async function getArticle(articleId: string) {

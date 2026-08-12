@@ -25,9 +25,16 @@ export const articlesPaginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 
+export const publicArticleSearchSchema = articlesPaginationSchema.extend({
+  q: z.string().trim().max(100, "Search must be 100 characters or fewer").default(""),
+});
+
 export type CreateArticleInput = z.infer<typeof createArticleSchema>;
 export type UpdateArticleInput = z.infer<typeof updateArticleSchema>;
 export type ArticlesPaginationInput = z.infer<typeof articlesPaginationSchema>;
+export type PublicArticleSearchInput = z.infer<typeof publicArticleSearchSchema>;
+
+export type PublicAuthor = { id: string; name: string; articleCount: number };
 
 export type Article = {
   id: string;
