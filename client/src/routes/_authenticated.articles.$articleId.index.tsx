@@ -1,4 +1,4 @@
-import { Button } from "@heroui/react";
+import { AlertDialog, Button, useOverlayState } from "@heroui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { articleQueryKeys } from "../features/articles/api/article-query-keys";
@@ -29,6 +29,7 @@ function ArticleDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: session } = authClient.useSession();
+  const deleteDialog = useOverlayState();
   const articleQuery = useQuery({
     queryKey: articleQueryKeys.detail(articleId),
     queryFn: () => getArticle(articleId),
@@ -36,6 +37,7 @@ function ArticleDetailPage() {
   const deleteMutation = useMutation({
     mutationFn: () => deleteArticle(articleId),
     onSuccess: () => {
+      deleteDialog.close();
       queryClient.removeQueries({
         queryKey: articleQueryKeys.detail(articleId),
       });
@@ -73,12 +75,14 @@ function ArticleDetailPage() {
             }
             navigate({ to: "/articles" });
           }}
+          className="transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           Back
         </Button>
         {session?.user.id === article.authorId && (
           <div className="flex gap-2">
             <Button
+              className="transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               onPress={() =>
                 navigate({
                   to: "/articles/$articleId/edit",
@@ -89,24 +93,16 @@ function ArticleDetailPage() {
               Edit
             </Button>
             <Button
+              className="transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+              variant="danger"
               isDisabled={deleteMutation.isPending}
-              onPress={() => {
-                if (window.confirm("Delete this article permanently?")) {
-                  deleteMutation.mutate();
-                }
-              }}
+              onPress={deleteDialog.open}
             >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              Delete
             </Button>
           </div>
         )}
       </div>
-
-      {session?.user.id === article.authorId && deleteMutation.isError && (
-        <p className="text-sm text-red-600">
-          {deleteMutation.error.message}
-        </p>
-      )}
 
       <article className="flex flex-col gap-4">
         {article.coverImageUrl && (
@@ -123,6 +119,57 @@ function ArticleDetailPage() {
         </p>
         <p className="whitespace-pre-wrap">{article.content}</p>
       </article>
+
+      <AlertDialog
+        isOpen={deleteDialog.isOpen}
+        onOpenChange={(isOpen) => {
+          if (!deleteMutation.isPending) {
+            deleteDialog.setOpen(isOpen);
+          }
+        }}
+      >
+        <AlertDialog.Backdrop>
+          <AlertDialog.Container>
+            <AlertDialog.Dialog>
+              <AlertDialog.Header>
+                <AlertDialog.Icon status="danger" />
+                <AlertDialog.Heading>Delete article?</AlertDialog.Heading>
+              </AlertDialog.Header>
+              <AlertDialog.Body>
+                <p>
+                  This action is irreversible. The article will be permanently
+                  deleted.
+                </p>
+                {deleteMutation.isError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {deleteMutation.error.message}
+                  </p>
+                )}
+              </AlertDialog.Body>
+              <AlertDialog.Footer>
+                <Button
+                  variant="secondary"
+                  isDisabled={deleteMutation.isPending}
+                  onPress={deleteDialog.close}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  isDisabled={deleteMutation.isPending}
+                  onPress={() => {
+                    if (!deleteMutation.isPending) {
+                      deleteMutation.mutate();
+                    }
+                  }}
+                >
+                  {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                </Button>
+              </AlertDialog.Footer>
+            </AlertDialog.Dialog>
+          </AlertDialog.Container>
+        </AlertDialog.Backdrop>
+      </AlertDialog>
     </main>
   );
 }
