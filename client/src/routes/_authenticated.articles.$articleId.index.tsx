@@ -6,17 +6,29 @@ import {
   deleteArticle,
   getArticle,
 } from "../features/articles/api/articles-api";
+import { authClient } from "../lib/auth-client";
 
 export const Route = createFileRoute(
   "/_authenticated/articles/$articleId/",
 )({
+  validateSearch: (search: Record<string, unknown>) => {
+    const validatedSearch: { from?: "public" } = {};
+
+    if (search.from === "public") {
+      validatedSearch.from = "public";
+    }
+
+    return validatedSearch;
+  },
   component: ArticleDetailPage,
 });
 
 function ArticleDetailPage() {
   const { articleId } = Route.useParams();
+  const { from } = Route.useSearch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
   const articleQuery = useQuery({
     queryKey: articleQueryKeys.detail(articleId),
     queryFn: () => getArticle(articleId),
@@ -53,34 +65,44 @@ function ArticleDetailPage() {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button onPress={() => navigate({ to: "/articles" })}>
+        <Button
+          onPress={() => {
+            if (from === "public") {
+              navigate({ to: "/" });
+              return;
+            }
+            navigate({ to: "/articles" });
+          }}
+        >
           Back
         </Button>
-        <div className="flex gap-2">
-          <Button
-            onPress={() =>
-              navigate({
-                to: "/articles/$articleId/edit",
-                params: { articleId },
-              })
-            }
-          >
-            Edit
-          </Button>
-          <Button
-            isDisabled={deleteMutation.isPending}
-            onPress={() => {
-              if (window.confirm("Delete this article permanently?")) {
-                deleteMutation.mutate();
+        {session?.user.id === article.authorId && (
+          <div className="flex gap-2">
+            <Button
+              onPress={() =>
+                navigate({
+                  to: "/articles/$articleId/edit",
+                  params: { articleId },
+                })
               }
-            }}
-          >
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
-          </Button>
-        </div>
+            >
+              Edit
+            </Button>
+            <Button
+              isDisabled={deleteMutation.isPending}
+              onPress={() => {
+                if (window.confirm("Delete this article permanently?")) {
+                  deleteMutation.mutate();
+                }
+              }}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        )}
       </div>
 
-      {deleteMutation.isError && (
+      {session?.user.id === article.authorId && deleteMutation.isError && (
         <p className="text-sm text-red-600">
           {deleteMutation.error.message}
         </p>

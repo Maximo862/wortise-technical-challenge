@@ -1,6 +1,6 @@
 import { Button, Input, Label, TextField } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { articleQueryKeys } from "../features/articles/api/article-query-keys";
 import {
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const navigate = useNavigate();
   const [draftSearch, setDraftSearch] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -116,10 +117,23 @@ function HomePage() {
                     <p className="line-clamp-3 whitespace-pre-wrap text-sm text-gray-700">
                       {article.content}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      By {article.authorName} ·{" "}
-                      {new Date(article.createdAt).toLocaleDateString()}
-                    </p>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-xs text-gray-500">
+                        By {article.authorName} ·{" "}
+                        {new Date(article.createdAt).toLocaleDateString()}
+                      </p>
+                      <Button
+                        onPress={() =>
+                          navigate({
+                            to: "/articles/$articleId",
+                            params: { articleId: article.id },
+                            search: { from: "public" },
+                          })
+                        }
+                      >
+                        View
+                      </Button>
+                    </div>
                   </div>
                 </article>
               ))}
