@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "verify:db": "tsx src/db/verify-connection.ts"
   },
@@ -20,6 +21,8 @@
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
-    "typescript": "^7.0.2"
+    "mongodb-memory-server": "^11.2.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }

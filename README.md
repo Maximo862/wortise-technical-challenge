@@ -176,7 +176,10 @@ npm run build -w client
 npm run typecheck -w server
 
 # Typecheck de los contratos compartidos
-npx tsc --noEmit -p shared/tsconfig.json
+npm run typecheck -w shared
+
+# Tests de integración del backend
+npm run test -w server
 
 # Verificar escritura y lectura en MongoDB
 npm run verify:db -w server
@@ -206,7 +209,9 @@ npm run verify:db -w server
 
 ## Verificación
 
-El código fue revisado, ejecutado y testeado manualmente durante el desarrollo. También se verificaron el build del frontend y el typecheck de frontend, backend y contratos compartidos. Actualmente el repositorio no incluye una suite de tests automatizados
+El código fue revisado, ejecutado y testeado manualmente durante el desarrollo. También se verificaron el build del frontend y el typecheck de frontend, backend y contratos compartidos.
+
+El backend incluye tests de integración para autenticación, autorización y validación. La suite utiliza Vitest, las solicitudes internas de Hono y una instancia temporal de MongoDB, aislada de las bases de desarrollo y producción.
 
 ## Uso de IA
 
@@ -216,7 +221,7 @@ Se utilizaron herramientas de IA como Claude y Codex como apoyo durante el desar
 
 Con más tiempo y crecimiento del proyecto, pensaria en :
 
-- Incorporar tests automatizados de integración para autenticación, ownership, búsqueda y paginación
+- Ampliar los tests automatizados para búsqueda, paginación y el flujo CRUD completo
 - Incorporar una pipeline de CI para ejecutar typecheck, tests y build antes de integrar cambios
 - Centralizar el mapeo de errores HTTP mediante un error handler global de Hono si aumenta la cantidad de rutas
 - Agregar índices y una estrategia de búsqueda más escalable en MongoDB si aumenta significativamente el volumen de artículos

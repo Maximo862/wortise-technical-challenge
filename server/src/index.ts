@@ -1,13 +1,8 @@
 import { serve } from "@hono/node-server";
-import { cors } from "hono/cors";
-import { Hono } from "hono";
 import { env } from "./config/env";
 import { createAuth } from "./auth/auth";
 import { connectToDatabase, getMongoClient } from "./db/client";
-import { sessionMiddleware, type SessionVariables } from "./middlewares/session.middleware";
-import { articlesRoute } from "./routes/articles.route";
-import { healthRoute } from "./routes/health.route";
-import { publicRoute } from "./routes/public.route";
+import { createApp } from "./app";
 
 let db;
 
@@ -20,17 +15,7 @@ try {
 }
 
 const auth = createAuth(db, getMongoClient());
-
-const app = new Hono<{ Variables: SessionVariables }>();
-
-app.use("*", cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
-app.use("*", sessionMiddleware(auth));
-
-app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
-
-app.route("/health", healthRoute);
-app.route("/api/articles", articlesRoute);
-app.route("/api/public", publicRoute);
+const app = createApp(auth, env.CLIENT_ORIGIN);
 
 serve(
   {
