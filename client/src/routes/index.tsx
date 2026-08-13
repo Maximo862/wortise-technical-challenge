@@ -35,7 +35,7 @@ function HomePage() {
 
   return (
     <main className="mx-auto grid max-w-5xl gap-8 p-4 md:grid-cols-[14rem_1fr]">
-      <aside className="flex flex-col gap-3">
+      <aside className="flex min-w-0 flex-col gap-3">
         <h2 className="text-xl font-semibold">Authors</h2>
         {authorsQuery.isPending ? (
           <p>Loading authors...</p>
@@ -47,9 +47,13 @@ function HomePage() {
         ) : authorsQuery.data.length === 0 ? (
           <p className="text-sm text-gray-600">There are no authors yet.</p>
         ) : (
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex w-full min-w-0 snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-2 md:flex-col md:items-start md:overflow-visible">
             {authorsQuery.data.map((author) => (
-              <Button key={author.id} onPress={() => applySearch(author.name)}>
+              <Button
+                key={author.id}
+                className="shrink-0 snap-start"
+                onPress={() => applySearch(author.name)}
+              >
                 {author.name} ({author.articleCount})
               </Button>
             ))}
