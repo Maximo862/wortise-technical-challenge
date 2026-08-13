@@ -71,7 +71,9 @@ function HomePage() {
           <p>Loading authors...</p>
         ) : authorsQuery.isError ? (
           <div className="flex flex-col items-start gap-2">
-            <p className="text-sm text-red-600">{authorsQuery.error.message}</p>
+            <p className="text-sm text-red-600" role="alert">
+              {authorsQuery.error.message}
+            </p>
             <Button onPress={() => authorsQuery.refetch()}>Try again</Button>
           </div>
         ) : authorsQuery.data.length === 0 ? (
@@ -117,7 +119,9 @@ function HomePage() {
           <p>Loading articles...</p>
         ) : articlesQuery.isError ? (
           <div className="flex flex-col items-start gap-3">
-            <p className="text-red-600">{articlesQuery.error.message}</p>
+            <p className="text-red-600" role="alert">
+              {articlesQuery.error.message}
+            </p>
             <Button onPress={() => articlesQuery.refetch()}>Try again</Button>
           </div>
         ) : articlesQuery.data.articles.length === 0 ? (
@@ -157,6 +161,7 @@ function HomePage() {
                         {new Date(article.createdAt).toLocaleDateString()}
                       </p>
                       <Button
+                        aria-label={`View ${article.title}`}
                         onPress={() =>
                           navigate({
                             to: "/articles/$articleId",

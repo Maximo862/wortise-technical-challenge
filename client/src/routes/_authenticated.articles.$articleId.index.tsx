@@ -56,7 +56,9 @@ function ArticleDetailPage() {
   if (articleQuery.isError) {
     return (
       <main className="mx-auto flex max-w-3xl flex-col items-start gap-3 p-4">
-        <p className="text-red-600">{articleQuery.error.message}</p>
+        <p className="text-red-600" role="alert">
+          {articleQuery.error.message}
+        </p>
         <Button onPress={() => articleQuery.refetch()}>Try again</Button>
       </main>
     );
@@ -129,7 +131,9 @@ function ArticleDetailPage() {
           }
         }}
       >
-        <AlertDialog.Backdrop>
+        <AlertDialog.Backdrop
+          isKeyboardDismissDisabled={deleteMutation.isPending}
+        >
           <AlertDialog.Container>
             <AlertDialog.Dialog>
               <AlertDialog.Header>
@@ -142,7 +146,7 @@ function ArticleDetailPage() {
                   deleted.
                 </p>
                 {deleteMutation.isError && (
-                  <p className="mt-2 text-sm text-red-600">
+                  <p className="mt-2 text-sm text-red-600" role="alert">
                     {deleteMutation.error.message}
                   </p>
                 )}

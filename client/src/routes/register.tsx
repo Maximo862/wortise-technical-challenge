@@ -44,6 +44,7 @@ function RegisterPage() {
               value={field.state.value}
               onChange={field.handleChange}
               onBlur={field.handleBlur}
+              isRequired
               isInvalid={
                 field.state.meta.isTouched && field.state.meta.errors.length > 0
               }
@@ -65,6 +66,7 @@ function RegisterPage() {
               value={field.state.value}
               onChange={field.handleChange}
               onBlur={field.handleBlur}
+              isRequired
               isInvalid={
                 field.state.meta.isTouched && field.state.meta.errors.length > 0
               }
@@ -86,6 +88,7 @@ function RegisterPage() {
               value={field.state.value}
               onChange={field.handleChange}
               onBlur={field.handleBlur}
+              isRequired
               isInvalid={
                 field.state.meta.isTouched && field.state.meta.errors.length > 0
               }
@@ -101,7 +104,11 @@ function RegisterPage() {
           )}
         </form.Field>
 
-        {formError && <p className="text-red-600 text-sm">{formError}</p>}
+        {formError && (
+          <p className="text-red-600 text-sm" role="alert">
+            {formError}
+          </p>
+        )}
 
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
