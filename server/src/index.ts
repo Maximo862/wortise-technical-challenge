@@ -32,6 +32,13 @@ app.route("/health", healthRoute);
 app.route("/api/articles", articlesRoute);
 app.route("/api/public", publicRoute);
 
-serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  console.log(`Server running on http://localhost:${info.port}`);
-});
+serve(
+  {
+    fetch: app.fetch,
+    port: env.PORT,
+    hostname: "0.0.0.0",
+  },
+  (info) => {
+    console.log(`Server running on http://localhost:${info.port}`);
+  },
+);
