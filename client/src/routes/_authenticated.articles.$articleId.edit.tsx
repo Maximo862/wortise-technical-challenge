@@ -7,6 +7,7 @@ import {
   updateArticle,
 } from "../features/articles/api/articles-api";
 import { ArticleForm } from "../features/articles/components/ArticleForm";
+import { authClient } from "../lib/auth-client";
 
 export const Route = createFileRoute(
   "/_authenticated/articles/$articleId/edit",
@@ -17,6 +18,7 @@ export const Route = createFileRoute(
 function EditArticlePage() {
   const { articleId } = Route.useParams();
   const navigate = useNavigate();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
   const queryClient = useQueryClient();
   const articleQuery = useQuery({
     queryKey: articleQueryKeys.detail(articleId),
@@ -41,7 +43,7 @@ function EditArticlePage() {
     },
   });
 
-  if (articleQuery.isPending) {
+  if (articleQuery.isPending || isSessionPending) {
     return <main className="p-4">Loading article...</main>;
   }
 
@@ -50,6 +52,25 @@ function EditArticlePage() {
       <main className="mx-auto flex max-w-2xl flex-col items-start gap-3 p-4">
         <p className="text-red-600">{articleQuery.error.message}</p>
         <Button onPress={() => articleQuery.refetch()}>Try again</Button>
+      </main>
+    );
+  }
+
+  if (!session || session.user.id !== articleQuery.data.authorId) {
+    return (
+      <main className="mx-auto flex max-w-2xl flex-col items-start gap-3 p-4">
+        <h1 className="text-2xl font-semibold">Access denied</h1>
+        <p>You can only edit your own articles.</p>
+        <Button
+          onPress={() =>
+            navigate({
+              to: "/articles/$articleId",
+              params: { articleId },
+            })
+          }
+        >
+          Back to article
+        </Button>
       </main>
     );
   }

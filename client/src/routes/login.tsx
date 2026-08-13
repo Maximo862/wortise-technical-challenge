@@ -84,7 +84,11 @@ function LoginPage() {
 
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <Button className="self-end" type="submit" isDisabled={!canSubmit}>
+            <Button
+              className="self-end"
+              type="submit"
+              isDisabled={!canSubmit || isSubmitting}
+            >
               {isSubmitting ? "Signing in..." : "Login"}
             </Button>
           )}

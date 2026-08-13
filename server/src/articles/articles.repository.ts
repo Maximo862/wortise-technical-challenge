@@ -22,6 +22,11 @@ type ArticleDocument = {
   updatedAt: Date;
 };
 
+type AuthUserDocument = {
+  _id: ObjectId;
+  name: string;
+};
+
 export type CreateArticleRecord = {
   title: string;
   content: string;
@@ -107,28 +112,45 @@ export async function findArticlesByAuthor(
 }
 
 export async function findPublicAuthors(): Promise<PublicAuthor[]> {
-  type AuthorGroup = {
-    _id: { authorId: string; authorName: string };
+  type ArticleCountGroup = {
+    _id: string;
     articleCount: number;
   };
 
-  const groups = await getArticlesCollection()
-    .aggregate<AuthorGroup>([
-      {
-        $group: {
-          _id: { authorId: "$authorId", authorName: "$authorName" },
-          articleCount: { $sum: 1 },
+  const [users, articleCounts] = await Promise.all([
+    getDb()
+      .collection<AuthUserDocument>("user")
+      .find({}, { projection: { name: 1 } })
+      .toArray(),
+    getArticlesCollection()
+      .aggregate<ArticleCountGroup>([
+        {
+          $group: {
+            _id: "$authorId",
+            articleCount: { $sum: 1 },
+          },
         },
-      },
-      { $sort: { articleCount: -1, "_id.authorName": 1 } },
-    ])
-    .toArray();
+      ])
+      .toArray(),
+  ]);
+  const articleCountByAuthorId = new Map(
+    articleCounts.map((group) => [group._id, group.articleCount]),
+  );
 
-  return groups.map((group) => ({
-    id: group._id.authorId,
-    name: group._id.authorName,
-    articleCount: group.articleCount,
-  }));
+  return users
+    .map((user) => {
+      const id = user._id.toHexString();
+      return {
+        id,
+        name: user.name,
+        articleCount: articleCountByAuthorId.get(id) ?? 0,
+      };
+    })
+    .sort(
+      (first, second) =>
+        second.articleCount - first.articleCount ||
+        first.name.localeCompare(second.name),
+    );
 }
 
 export async function searchPublicArticles(

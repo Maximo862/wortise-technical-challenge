@@ -1,4 +1,5 @@
 import { Button } from "@heroui/react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   createRootRoute,
   Link,
@@ -6,9 +7,11 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { authClient } from "../lib/auth-client";
+import { articleQueryKeys } from "../features/articles/api/article-query-keys";
 
 function RootLayout() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: session, isPending } = authClient.useSession();
 
   return (
@@ -21,10 +24,13 @@ function RootLayout() {
           {isPending ? null : session ? (
             <>
               <Link to="/articles">My articles</Link>
-              <span>Hi, {session.user.name}</span>
+              <span className="hidden sm:inline">Hi, {session.user.name}</span>
               <Button
                 onPress={async () => {
                   await authClient.signOut();
+                  queryClient.removeQueries({
+                    queryKey: articleQueryKeys.mine(),
+                  });
                   navigate({ to: "/" });
                 }}
               >

@@ -114,7 +114,8 @@ function ArticleDetailPage() {
         )}
         <h1 className="text-3xl font-semibold">{article.title}</h1>
         <p className="text-sm text-gray-500">
-          By {article.authorName} · Updated{" "}
+          By {article.authorName} | Created{" "}
+          {new Date(article.createdAt).toLocaleString()} | Updated{" "}
           {new Date(article.updatedAt).toLocaleString()}
         </p>
         <p className="whitespace-pre-wrap">{article.content}</p>
