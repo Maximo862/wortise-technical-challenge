@@ -33,7 +33,9 @@ function ArticlesPage() {
         <p>Loading articles...</p>
       ) : articlesQuery.isError ? (
         <div className="flex flex-col items-start gap-3">
-          <p className="text-red-600">{articlesQuery.error.message}</p>
+          <p className="text-red-600" role="alert">
+            {articlesQuery.error.message}
+          </p>
           <Button
             className="transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             onPress={() => articlesQuery.refetch()}
@@ -76,6 +78,7 @@ function ArticlesPage() {
                     </time>
                     <Button
                       className="transition-transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      aria-label={`View ${article.title}`}
                       onPress={() =>
                         navigate({
                           to: "/articles/$articleId",

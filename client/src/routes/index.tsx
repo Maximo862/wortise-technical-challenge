@@ -1,22 +1,37 @@
 import { Button, Input, Label, TextField } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { articleQueryKeys } from "../features/articles/api/article-query-keys";
 import {
   getPublicAuthors,
   searchPublicArticles,
 } from "../features/articles/api/articles-api";
 
+type PublicSearchParams = {
+  q?: string;
+  page?: number;
+};
+
 export const Route = createFileRoute("/")({
+  validateSearch: (search): PublicSearchParams => {
+    const q = typeof search.q === "string" ? search.q.trim() : "";
+    const parsedPage = Number(search.page);
+    const page =
+      Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+
+    return {
+      ...(q ? { q } : {}),
+      ...(page > 1 ? { page } : {}),
+    };
+  },
   component: HomePage,
 });
 
 function HomePage() {
   const navigate = useNavigate();
-  const [draftSearch, setDraftSearch] = useState("");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const { q: search = "", page = 1 } = Route.useSearch();
+  const [draftSearch, setDraftSearch] = useState(search);
   const authorsQuery = useQuery({
     queryKey: articleQueryKeys.publicAuthors(),
     queryFn: getPublicAuthors,
@@ -26,11 +41,26 @@ function HomePage() {
     queryFn: () => searchPublicArticles(search, page),
   });
 
+  useEffect(() => {
+    setDraftSearch(search);
+  }, [search]);
+
   function applySearch(value: string) {
     const normalizedSearch = value.trim();
-    setDraftSearch(normalizedSearch);
-    setSearch(normalizedSearch);
-    setPage(1);
+    navigate({
+      to: "/",
+      search: normalizedSearch ? { q: normalizedSearch } : {},
+    });
+  }
+
+  function goToPage(nextPage: number) {
+    navigate({
+      to: "/",
+      search: {
+        ...(search ? { q: search } : {}),
+        ...(nextPage > 1 ? { page: nextPage } : {}),
+      },
+    });
   }
 
   return (
@@ -41,7 +71,9 @@ function HomePage() {
           <p>Loading authors...</p>
         ) : authorsQuery.isError ? (
           <div className="flex flex-col items-start gap-2">
-            <p className="text-sm text-red-600">{authorsQuery.error.message}</p>
+            <p className="text-sm text-red-600" role="alert">
+              {authorsQuery.error.message}
+            </p>
             <Button onPress={() => authorsQuery.refetch()}>Try again</Button>
           </div>
         ) : authorsQuery.data.length === 0 ? (
@@ -87,7 +119,9 @@ function HomePage() {
           <p>Loading articles...</p>
         ) : articlesQuery.isError ? (
           <div className="flex flex-col items-start gap-3">
-            <p className="text-red-600">{articlesQuery.error.message}</p>
+            <p className="text-red-600" role="alert">
+              {articlesQuery.error.message}
+            </p>
             <Button onPress={() => articlesQuery.refetch()}>Try again</Button>
           </div>
         ) : articlesQuery.data.articles.length === 0 ? (
@@ -127,6 +161,7 @@ function HomePage() {
                         {new Date(article.createdAt).toLocaleDateString()}
                       </p>
                       <Button
+                        aria-label={`View ${article.title}`}
                         onPress={() =>
                           navigate({
                             to: "/articles/$articleId",
@@ -146,7 +181,7 @@ function HomePage() {
             <div className="flex items-center justify-between gap-4">
               <Button
                 isDisabled={page === 1 || articlesQuery.isFetching}
-                onPress={() => setPage((currentPage) => currentPage - 1)}
+                onPress={() => goToPage(page - 1)}
               >
                 Previous
               </Button>
@@ -159,7 +194,7 @@ function HomePage() {
                   page >= articlesQuery.data.pagination.totalPages ||
                   articlesQuery.isFetching
                 }
-                onPress={() => setPage((currentPage) => currentPage + 1)}
+                onPress={() => goToPage(page + 1)}
               >
                 Next
               </Button>

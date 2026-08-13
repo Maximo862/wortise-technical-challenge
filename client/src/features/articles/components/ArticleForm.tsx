@@ -63,6 +63,7 @@ export function ArticleForm({
             value={field.state.value}
             onChange={field.handleChange}
             onBlur={field.handleBlur}
+            isRequired
             isInvalid={
               field.state.meta.isTouched && field.state.meta.errors.length > 0
             }
@@ -84,6 +85,7 @@ export function ArticleForm({
             value={field.state.value}
             onChange={field.handleChange}
             onBlur={field.handleBlur}
+            isRequired
             isInvalid={
               field.state.meta.isTouched && field.state.meta.errors.length > 0
             }
@@ -120,7 +122,11 @@ export function ArticleForm({
         )}
       </form.Field>
 
-      {formError && <p className="text-sm text-red-600">{formError}</p>}
+      {formError && (
+        <p className="text-sm text-red-600" role="alert">
+          {formError}
+        </p>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button type="button" onPress={onCancel}>

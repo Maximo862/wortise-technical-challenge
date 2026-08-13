@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: typecheck, build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      VITE_API_URL: http://localhost:3000
+      MONGOMS_VERSION: "8.2.6"
+      MONGOMS_DOWNLOAD_DIR: ${{ github.workspace }}/.cache/mongodb-binaries
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Restore MongoDB binary cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.MONGOMS_DOWNLOAD_DIR }}
+          key: ${{ runner.os }}-mongodb-${{ env.MONGOMS_VERSION }}
+
+      - name: Install dependencies
+        env:
+          MONGOMS_DISABLE_POSTINSTALL: "1"
+        run: npm ci
+
+      - name: Typecheck shared contracts
+        run: npm run typecheck -w shared
+
+      - name: Typecheck server
+        run: npm run typecheck -w server
+
+      - name: Build and typecheck client
+        run: npm run build -w client
+
+      - name: Run integration tests
+        run: npm run test -w server

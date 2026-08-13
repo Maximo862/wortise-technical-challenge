@@ -176,7 +176,10 @@ npm run build -w client
 npm run typecheck -w server
 
 # Typecheck de los contratos compartidos
-npx tsc --noEmit -p shared/tsconfig.json
+npm run typecheck -w shared
+
+# Tests de integración del backend
+npm run test -w server
 
 # Verificar escritura y lectura en MongoDB
 npm run verify:db -w server
@@ -206,7 +209,20 @@ npm run verify:db -w server
 
 ## Verificación
 
-El código fue revisado, ejecutado y testeado manualmente durante el desarrollo. También se verificaron el build del frontend y el typecheck de frontend, backend y contratos compartidos. Actualmente el repositorio no incluye una suite de tests automatizados
+El código fue revisado, ejecutado y testeado manualmente durante el desarrollo. También se verificaron el build del frontend y el typecheck de frontend, backend y contratos compartidos.
+
+El backend incluye tests de integración para autenticación, autorización, validación, búsqueda, paginación y el flujo CRUD principal. La suite utiliza Vitest, las solicitudes internas de Hono y una instancia temporal de MongoDB, aislada de las bases de desarrollo y producción
+
+## Integración continua
+
+El workflow de GitHub Actions se ejecuta en cada `push` y `pull_request`. Instala las dependencias con `npm ci` y verifica:
+
+- typecheck de `shared`;
+- typecheck de `server`;
+- build y typecheck de `client`;
+- tests de integración del backend.
+
+La pipeline usa Node.js 22 y una instancia temporal de MongoDB. No necesita credenciales ni acceso a las bases de desarrollo o producción.
 
 ## Uso de IA
 
@@ -216,8 +232,7 @@ Se utilizaron herramientas de IA como Claude y Codex como apoyo durante el desar
 
 Con más tiempo y crecimiento del proyecto, pensaria en :
 
-- Incorporar tests automatizados de integración para autenticación, ownership, búsqueda y paginación
-- Incorporar una pipeline de CI para ejecutar typecheck, tests y build antes de integrar cambios
+- Agregar un test E2E de navegador para el flujo principal
 - Centralizar el mapeo de errores HTTP mediante un error handler global de Hono si aumenta la cantidad de rutas
 - Agregar índices y una estrategia de búsqueda más escalable en MongoDB si aumenta significativamente el volumen de artículos
 - Extraer hooks/componentes reutilizables cuando la lógica de queries y formularios empiece a repetirse entre páginas

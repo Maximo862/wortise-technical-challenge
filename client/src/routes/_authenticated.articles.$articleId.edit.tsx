@@ -50,7 +50,9 @@ function EditArticlePage() {
   if (articleQuery.isError) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col items-start gap-3 p-4">
-        <p className="text-red-600">{articleQuery.error.message}</p>
+        <p className="text-red-600" role="alert">
+          {articleQuery.error.message}
+        </p>
         <Button onPress={() => articleQuery.refetch()}>Try again</Button>
       </main>
     );
