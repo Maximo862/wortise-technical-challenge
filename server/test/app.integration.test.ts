@@ -8,7 +8,7 @@ import {
 } from "vitest";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import type { Db, MongoClient } from "mongodb";
-import type { Article } from "shared";
+import type { Article, PaginatedArticles, PublicAuthor } from "shared";
 import type { App } from "../src/app";
 
 const TEST_ORIGIN = "http://localhost:5173";
@@ -35,6 +35,13 @@ function requestHeaders(cookie?: string): Record<string, string> {
   };
 }
 
+function getSessionCookie(response: Response): string {
+  const setCookie = response.headers.get("set-cookie");
+  expect(setCookie).toBeTruthy();
+
+  return setCookie!.split(";")[0];
+}
+
 async function registerUser(name: string, email: string): Promise<string> {
   const response = await app.request("/api/auth/sign-up/email", {
     method: "POST",
@@ -48,22 +55,35 @@ async function registerUser(name: string, email: string): Promise<string> {
 
   expect(response.status).toBe(200);
 
-  const setCookie = response.headers.get("set-cookie");
-  expect(setCookie).toBeTruthy();
+  return getSessionCookie(response);
+}
 
-  return setCookie!.split(";")[0];
+async function loginUser(
+  email: string,
+  password = "password123",
+): Promise<string> {
+  const response = await app.request("/api/auth/sign-in/email", {
+    method: "POST",
+    headers: requestHeaders(),
+    body: JSON.stringify({ email, password }),
+  });
+
+  expect(response.status).toBe(200);
+
+  return getSessionCookie(response);
 }
 
 async function createTestArticle(
   cookie: string,
   title = "Original title",
+  content = "Original article content",
 ): Promise<Article> {
   const response = await app.request("/api/articles", {
     method: "POST",
     headers: requestHeaders(cookie),
     body: JSON.stringify({
       title,
-      content: "Original article content",
+      content,
       coverImageUrl: "",
     }),
   });
@@ -72,6 +92,24 @@ async function createTestArticle(
 
   const body = (await response.json()) as { article: Article };
   return body.article;
+}
+
+async function searchPublicArticles(
+  query: string,
+  page = 1,
+  limit = 10,
+): Promise<PaginatedArticles> {
+  const searchParams = new URLSearchParams({
+    q: query,
+    page: String(page),
+    limit: String(limit),
+  });
+  const response = await app.request(
+    `/api/public/search?${searchParams.toString()}`,
+  );
+
+  expect(response.status).toBe(200);
+  return (await response.json()) as PaginatedArticles;
 }
 
 beforeAll(async () => {
@@ -273,5 +311,179 @@ describe("articles API security and validation", () => {
         }),
       ]),
     );
+  });
+});
+
+describe("public articles API", () => {
+  it("searches articles by title, content and author name", async () => {
+    const titleCookie = await registerUser(
+      "Title Writer",
+      "title-search@example.com",
+    );
+    const contentCookie = await registerUser(
+      "Content Writer",
+      "content-search@example.com",
+    );
+    const authorCookie = await registerUser(
+      "Aurora Author",
+      "author-search@example.com",
+    );
+
+    const titleArticle = await createTestArticle(
+      titleCookie,
+      "Nebula field report",
+      "A general astronomy article",
+    );
+    const contentArticle = await createTestArticle(
+      contentCookie,
+      "Navigation notes",
+      "Instructions for using a quartz compass",
+    );
+    const authorArticle = await createTestArticle(
+      authorCookie,
+      "Northern observations",
+      "Notes collected during winter",
+    );
+
+    const titleResults = await searchPublicArticles("nebula");
+    const contentResults = await searchPublicArticles("QUARTZ COMPASS");
+    const authorResults = await searchPublicArticles("aurora author");
+
+    expect(titleResults.articles.map((article) => article.id)).toEqual([
+      titleArticle.id,
+    ]);
+    expect(contentResults.articles.map((article) => article.id)).toEqual([
+      contentArticle.id,
+    ]);
+    expect(authorResults.articles.map((article) => article.id)).toEqual([
+      authorArticle.id,
+    ]);
+  });
+
+  it("paginates public results and calculates totals correctly", async () => {
+    const cookie = await registerUser(
+      "Pagination Author",
+      "pagination@example.com",
+    );
+
+    for (let index = 1; index <= 5; index += 1) {
+      await createTestArticle(cookie, `Article ${index}`);
+    }
+
+    const firstPage = await searchPublicArticles("", 1, 2);
+    const secondPage = await searchPublicArticles("", 2, 2);
+    const thirdPage = await searchPublicArticles("", 3, 2);
+    const articleIds = [
+      ...firstPage.articles,
+      ...secondPage.articles,
+      ...thirdPage.articles,
+    ].map((article) => article.id);
+
+    expect(firstPage.articles).toHaveLength(2);
+    expect(secondPage.articles).toHaveLength(2);
+    expect(thirdPage.articles).toHaveLength(1);
+    expect(firstPage.pagination).toEqual({
+      page: 1,
+      limit: 2,
+      total: 5,
+      totalPages: 3,
+    });
+    expect(secondPage.pagination.page).toBe(2);
+    expect(thirdPage.pagination.page).toBe(3);
+    expect(new Set(articleIds).size).toBe(5);
+  });
+
+  it("includes authors without articles and returns correct article counts", async () => {
+    await registerUser("New Author", "new-author@example.com");
+    const publishingCookie = await registerUser(
+      "Publishing Author",
+      "publishing-author@example.com",
+    );
+    await createTestArticle(publishingCookie, "First publication");
+    await createTestArticle(publishingCookie, "Second publication");
+
+    const response = await app.request("/api/public/authors");
+    const body = (await response.json()) as { authors: PublicAuthor[] };
+    const newAuthor = body.authors.find(
+      (author) => author.name === "New Author",
+    );
+    const publishingAuthor = body.authors.find(
+      (author) => author.name === "Publishing Author",
+    );
+
+    expect(response.status).toBe(200);
+    expect(newAuthor?.articleCount).toBe(0);
+    expect(publishingAuthor?.articleCount).toBe(2);
+  });
+});
+
+describe("critical article flow", () => {
+  it("registers, logs in, creates, views, edits and deletes an article", async () => {
+    const email = "critical-flow@example.com";
+    await registerUser("Critical Flow User", email);
+    const cookie = await loginUser(email);
+
+    const createdArticle = await createTestArticle(
+      cookie,
+      "Initial flow title",
+      "Initial flow content",
+    );
+
+    const detailResponse = await app.request(
+      `/api/articles/${createdArticle.id}`,
+      { headers: requestHeaders(cookie) },
+    );
+    const detailBody = (await detailResponse.json()) as {
+      article: Article;
+    };
+
+    expect(detailResponse.status).toBe(200);
+    expect(detailBody.article).toMatchObject({
+      id: createdArticle.id,
+      title: "Initial flow title",
+      content: "Initial flow content",
+    });
+
+    const updateResponse = await app.request(
+      `/api/articles/${createdArticle.id}`,
+      {
+        method: "PATCH",
+        headers: requestHeaders(cookie),
+        body: JSON.stringify({
+          title: "Updated flow title",
+          content: "Updated flow content",
+        }),
+      },
+    );
+    const updateBody = (await updateResponse.json()) as {
+      article: Article;
+    };
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateBody.article).toMatchObject({
+      id: createdArticle.id,
+      title: "Updated flow title",
+      content: "Updated flow content",
+    });
+
+    const deleteResponse = await app.request(
+      `/api/articles/${createdArticle.id}`,
+      {
+        method: "DELETE",
+        headers: requestHeaders(cookie),
+      },
+    );
+
+    expect(deleteResponse.status).toBe(204);
+
+    const deletedDetailResponse = await app.request(
+      `/api/articles/${createdArticle.id}`,
+      { headers: requestHeaders(cookie) },
+    );
+    const deletedDetailBody =
+      (await deletedDetailResponse.json()) as ErrorResponse;
+
+    expect(deletedDetailResponse.status).toBe(404);
+    expect(deletedDetailBody.error.code).toBe("ARTICLE_NOT_FOUND");
   });
 });

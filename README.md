@@ -211,7 +211,7 @@ npm run verify:db -w server
 
 El código fue revisado, ejecutado y testeado manualmente durante el desarrollo. También se verificaron el build del frontend y el typecheck de frontend, backend y contratos compartidos.
 
-El backend incluye tests de integración para autenticación, autorización y validación. La suite utiliza Vitest, las solicitudes internas de Hono y una instancia temporal de MongoDB, aislada de las bases de desarrollo y producción.
+El backend incluye tests de integración para autenticación, autorización, validación, búsqueda, paginación y el flujo CRUD principal. La suite utiliza Vitest, las solicitudes internas de Hono y una instancia temporal de MongoDB, aislada de las bases de desarrollo y producción
 
 ## Uso de IA
 
@@ -221,7 +221,7 @@ Se utilizaron herramientas de IA como Claude y Codex como apoyo durante el desar
 
 Con más tiempo y crecimiento del proyecto, pensaria en :
 
-- Ampliar los tests automatizados para búsqueda, paginación y el flujo CRUD completo
+- Agregar un test E2E de navegador para el flujo principal
 - Incorporar una pipeline de CI para ejecutar typecheck, tests y build antes de integrar cambios
 - Centralizar el mapeo de errores HTTP mediante un error handler global de Hono si aumenta la cantidad de rutas
 - Agregar índices y una estrategia de búsqueda más escalable en MongoDB si aumenta significativamente el volumen de artículos
